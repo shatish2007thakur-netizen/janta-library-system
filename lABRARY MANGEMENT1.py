@@ -1,254 +1,110 @@
-import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
+import streamlit as st
+import pandas as pd
 
+# Page Configuration & Styling
+st.set_page_config(page_title="Janta Library Management System", layout="wide")
 
-class LibrarySystem:
+# Custom CSS for UI Colors (Matching your original pink & cyan theme)
+st.markdown("""
+    <style>
+    .main-title {
+        background-color: #2980b9;
+        color: white;
+        text-align: center;
+        padding: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    /* Sidebar layout color (Cyan background from your photo) */
+    [data-testid="stSidebar"] {
+        background-color: #00cecb;
+        padding: 20px;
+    }
+    /* Label highlights (Pink blocks from your photo) */
+    .pink-label {
+        background-color: #ff65a3;
+        color: black;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-bottom: 5px;
+    }
+    /* Table header title (Blue banner) */
+    .table-banner {
+        background-color: #0066cc;
+        color: white;
+        text-align: center;
+        padding: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Janta Library management System")
-        self.root.geometry("1000x600")
+# Main Title Banner
+st.markdown('<div class="main-title">SHREE JANTA SECONDARY SCHOOL LIBRARY MANAGEMENT SYSTEM</div>', unsafe_allow_html=True)
 
-        # --- Top Title Banner ---
-        title_banner = tk.Label(
-            self.root,
-            text="SHREE JANTA SECONDARY SCHOOL LIBRARY MANAGEMENT SYSTEM",
-            font=("Arial", 20, "bold"),
-            bg="#2980b9",
-            fg="white",
-            height=2,
-        )
-        title_banner.pack(fill=tk.X)
+# Initialize Session State for holding data
+if "books_df" not in st.session_state:
+    st.session_state.books_df = pd.DataFrame([
+        {"Book Name": "HP1", "Book ID": "0001", "Author": "JK Rowling", "Status of the Book": "Available", "Card ID of the Issuer": ""},
+        {"Book Name": "Harry Potter 2", "Book ID": "0002", "Author": "JK Rowling", "Status of the Book": "Available", "Card ID of the Issuer": ""},
+        {"Book Name": "Percy Jackson and the Olympians", "Book ID": "0103", "Author": "Rick Riordan", "Status of the Book": "Issued", "Card ID of the Issuer": "PG-10981"},
+        {"Book Name": "Think Python", "Book ID": "1098", "Author": "Allen B. Downey", "Status of the Book": "Available", "Card ID of the Issuer": ""},
+        {"Book Name": "Famous Five 1", "Book ID": "4567", "Author": "Enid Blyton", "Status of the Book": "Issued", "Card ID of the Issuer": "PG-1290"},
+        {"Book Name": "Python GUI Programming", "Book ID": "8653", "Author": "Allen D. Moore", "Status of the Book": "Available", "Card ID of the Issuer": ""}
+    ])
 
-        # --- Main Workspace Split ---
-        self.main_frame = tk.Frame(self.root)
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+# --- LEFT SIDEBAR (Data Entry Form) ---
+st.sidebar.markdown('<p class="pink-label">Book Name</p>', unsafe_allow_html=True)
+book_name = st.sidebar.text_input("Book Name Input", label_visibility="collapsed")
 
-        # Left Sidebar (Data Entry)
-        self.left_frame = tk.Frame(self.main_frame, bg="#1cc5b1", width=300)
-        self.left_frame.pack(side=tk.LEFT, fill=tk.Y)
-        self.left_frame.pack_propagate(False)
+st.sidebar.markdown('<p class="pink-label">Book ID</p>', unsafe_allow_html=True)
+book_id = st.sidebar.text_input("Book ID Input", label_visibility="collapsed")
 
-        # Right Area (Controls & Table)
-        self.right_frame = tk.Frame(self.main_frame, bg="#db34c5")
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+st.sidebar.markdown('<p class="pink-label">Author Name</p>', unsafe_allow_html=True)
+author_name = st.sidebar.text_input("Author Name Input", label_visibility="collapsed")
 
-        # --- Left Sidebar Widgets ---
-        self.create_left_widgets()
+st.sidebar.markdown('<p class="pink-label">Status of the Book</p>', unsafe_allow_html=True)
+status = st.sidebar.selectbox("Status Dropdown", ["Available", "Issued"], label_visibility="collapsed")
 
-        # --- Right Area Widgets ---
-        self.create_right_widgets()
+st.sidebar.markdown('<p class="pink-label">Issuer\'s Card ID</p>', unsafe_allow_html=True)
+card_id = st.sidebar.text_input("Card ID Input", label_visibility="collapsed")
 
-    def create_left_widgets(self):
-        # Universal styling configuration for entries
-        label_config = {
-            "bg": "#e985d7",
-            "fg": "black",
-            "font": ("Arial", 12, "bold"),
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
+
+if st.sidebar.button("Add new record", use_container_width=True):
+    if book_name and book_id:
+        new_row = {
+            "Book Name": book_name,
+            "Book ID": book_id,
+            "Author": author_name,
+            "Status of the Book": status,
+            "Card ID of the Issuer": card_id
         }
-        entry_config = {"font": ("Arial", 12), "bd": 1, "relief": tk.SOLID}
+        st.session_state.books_df = pd.concat([st.session_state.books_df, pd.DataFrame([new_row])], ignore_index=True)
+        st.sidebar.success("Record Added!")
+    else:
+        st.sidebar.error("Book Name & ID are required!")
 
-        # Book Name
-        tk.Label(self.left_frame, text="Book Name", **label_config).pack(
-            pady=(20, 5)
-        )
-        self.ent_book_name = tk.Entry(self.left_frame, **entry_config)
-        self.ent_book_name.pack(pady=5, ipady=3, padx=20, fill=tk.X)
+# --- RIGHT SIDE PANEL (Controls & Table) ---
+col1, col2, col3, col4 = st.columns(4)
 
-        # Book ID
-        tk.Label(self.left_frame, text="Book ID", **label_config).pack(
-            pady=(15, 5)
-        )
-        self.ent_book_id = tk.Entry(self.left_frame, **entry_config)
-        self.ent_book_id.pack(pady=5, ipady=3, padx=20, fill=tk.X)
+with col1:
+    st.button("Delete Selected", use_container_width=True)
+with col2:
+    st.button("View record", use_container_width=True)
+with col3:
+    if st.button("Delete All Records", use_container_width=True):
+        st.session_state.books_df = pd.DataFrame(columns=["Book Name", "Book ID", "Author", "Status of the Book", "Card ID of the Issuer"])
+with col4:
+    if st.button("Clear fields", use_container_width=True):
+        st.rerun()
 
-        # Author Name
-        tk.Label(self.left_frame, text="Author Name", **label_config).pack(
-            pady=(15, 5)
-        )
-        self.ent_author = tk.Entry(self.left_frame, **entry_config)
-        self.ent_author.pack(pady=5, ipady=3, padx=20, fill=tk.X)
-
-        # Status of the Book
-        tk.Label(self.left_frame, text="Status of the Book", **label_config).pack(
-            pady=(15, 5)
-        )
-        self.status_var = tk.StringVar(value="Available")
-        self.combo_status = ttk.Combobox(
-            self.left_frame,
-            textvariable=self.status_var,
-            values=["Available", "Issued"],
-            state="readonly",
-            font=("Arial", 11),
-        )
-        self.combo_status.pack(pady=5, ipady=3, padx=20, fill=tk.X)
-
-        # Issuer's Card ID
-        tk.Label(self.left_frame, text="Issuer's Card ID", **label_config).pack(
-            pady=(15, 5)
-        )
-        self.ent_card_id = tk.Entry(self.left_frame, **entry_config)
-        self.ent_card_id.pack(pady=5, ipady=3, padx=20, fill=tk.X)
-
-        # Add New Record Button
-        btn_add = tk.Button(
-            self.left_frame,
-            text="Add new record",
-            font=("Arial", 12, "bold"),
-            bg="#151fd8",
-            fg="white",
-            command=self.add_record,
-        )
-        btn_add.pack(pady=30, padx=40, fill=tk.X, ipady=5)
-
-    def create_right_widgets(self):
-        # Top Action Button Bar
-        btn_frame = tk.Frame(self.right_frame, bg="#3498db")
-        btn_frame.pack(fill=tk.X, pady=20, padx=10)
-
-        # FIXED: Removed 'ipady' from button dictionary settings
-        btn_style = {
-            "font": ("Arial", 12, "bold"),
-            "bg": "#2c502f",
-            "fg": "white",
-            "width": 15,
-        }
-
-        # FIXED: Transferred ipady=5 to the .pack() layout configurations
-        tk.Button(
-            btn_frame, text="Delete record", command=self.delete_record, **btn_style
-        ).pack(side=tk.LEFT, padx=10, expand=True, ipady=5)
-        tk.Button(
-            btn_frame, text="View record", command=self.view_record, **btn_style
-        ).pack(side=tk.LEFT, padx=10, expand=True, ipady=5)
-        tk.Button(
-            btn_frame,
-            text="Delete All Records",
-            command=self.delete_all,
-            **btn_style
-        ).pack(side=tk.LEFT, padx=10, expand=True, ipady=5)
-        tk.Button(
-            btn_frame, text="Clear fields", command=self.clear_fields, **btn_style
-        ).pack(side=tk.LEFT, padx=10, expand=True, ipady=5)
-
-        # Table Header Banner
-        table_title = tk.Label(
-            self.right_frame,
-            text="INFORMATION ABOUT ALL THE BOOKS",
-            font=("Arial", 14, "bold"),
-            bg="#0066cc",
-            fg="white",
-            pady=8,
-        )
-        table_title.pack(fill=tk.X, pady=(10, 0))
-
-        # Data Treeview Table Container
-        tree_frame = tk.Frame(self.right_frame)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        columns = ("name", "id", "author", "status", "card")
-        self.tree = ttk.Treeview(
-            tree_frame, columns=columns, show="headings", selectmode="browse"
-        )
-
-        # Define Columns
-        self.tree.heading("name", text="Book Name")
-        self.tree.heading("id", text="Book ID")
-        self.tree.heading("author", text="Author")
-        self.tree.heading("status", text="Status of the Book")
-        self.tree.heading("card", text="Card ID of the Issuer")
-
-        self.tree.column("name", width=200, anchor=tk.W)
-        self.tree.column("id", width=80, anchor=tk.CENTER)
-        self.tree.column("author", width=150, anchor=tk.W)
-        self.tree.column("status", width=120, anchor=tk.CENTER)
-        self.tree.column("card", width=130, anchor=tk.CENTER)
-
-        # Scrollbars
-        vsb = ttk.Scrollbar(
-            tree_frame, orient="vertical", command=self.tree.yview
-        )
-        hsb = ttk.Scrollbar(
-            tree_frame, orient="horizontal", command=self.tree.xview
-        )
-        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        hsb.pack(side=tk.BOTTOM, fill=tk.X)
-        self.tree.pack(fill=tk.BOTH, expand=True)
-
-        # Inject Dummy Data seen in screenshot
-        self.insert_mock_data()
-
-    # --- Logic Operations ---
-    def insert_mock_data(self):
-        mock_data = [
-            ("HP1", "0001", "JK Rowling", "Available", ""),
-            ("Harry Potter 2", "0002", "JK Rowling", "Available", ""),
-            (
-                "Percy Jackson and the Olympians",
-                "0103",
-                "Rick Riordan",
-                "Issued",
-                "PG-10981",
-            ),
-            ("Think Python", "1098", "Allen B. Downey", "Available", ""),
-            ("Famous Five 1", "4567", "Enid Blyton", "Issued", "PG-1290"),
-            ("Python GUI Programming", "8653", "Allen D. Moore", "Available", ""),
-        ]
-        for row in mock_data:
-            self.tree.insert("", tk.END, values=row)
-
-    def add_record(self):
-        name = self.ent_book_name.get()
-        bid = self.ent_book_id.get()
-        author = self.ent_author.get()
-        status = self.status_var.get()
-        card = self.ent_card_id.get()
-
-        if not name or not bid:
-            messagebox.showerror("Error", "Book Name and ID are mandatory!")
-            return
-
-        self.tree.insert("", tk.END, values=(name, bid, author, status, card))
-        self.clear_fields()
-
-    def delete_record(self):
-        selected_item = self.tree.selection()
-        if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to delete")
-            return
-        self.tree.delete(selected_item)
-
-    def delete_all(self):
-        if messagebox.askyesno("Confirm", "Delete all records?"):
-            for item in self.tree.get_children():
-                self.tree.delete(item)
-
-    def clear_fields(self):
-        self.ent_book_name.delete(0, tk.END)
-        self.ent_book_id.delete(0, tk.END)
-        self.ent_author.delete(0, tk.END)
-        self.status_var.set("Available")
-        self.ent_card_id.delete(0, tk.END)
-
-    def view_record(self):
-        selected_item = self.tree.selection()
-        if not selected_item:
-            messagebox.showwarning("Warning", "Please select a record to view")
-            return
-        values = self.tree.item(selected_item, "values")
-
-        self.clear_fields()
-        self.ent_book_name.insert(0, values[0])
-        self.ent_book_id.insert(0, values[1])
-        self.ent_author.insert(0, values[2])
-        self.status_var.set(values[3])
-        self.ent_card_id.insert(0, values[4])
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = LibrarySystem(root)
-    root.mainloop()
+# Table Banner & Live Interactive Table
+st.markdown('<div class="table-banner">INFORMATION ABOUT ALL THE BOOKS</div>', unsafe_allow_html=True)
+st.data_editor(st.session_state.books_df, use_container_width=True, num_rows="dynamic")
