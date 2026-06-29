@@ -5,7 +5,7 @@ import requests
 # Page Configuration
 st.set_page_config(page_title="Janta Library Management System", layout="wide")
 
-# ⚠️ यहाँ अपनी Supabase की डिटेल्स भरें:
+# Please Give the details about your supabase
 SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL"
 SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
 TABLE_URL = f"{SUPABASE_URL}/rest/v1/books"
@@ -17,7 +17,7 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
-# Supabase से लाइव डाटा लोड करने का फंक्शन
+# Supabase
 def load_data_from_supabase():
     try:
         response = requests.get(TABLE_URL, headers=HEADERS)
@@ -25,13 +25,13 @@ def load_data_from_supabase():
             data = response.json()
             if data:
                 df = pd.DataFrame(data)
-                # कॉलम नाम को सुंदर बनाने के लिए रीनेम करें
+               
                 df = df.rename(columns={
                     "book_name": "Book Name", "book_id": "Book ID", 
                     "author": "Author", "status": "Status of the Book", 
                     "card_id": "Card ID of the Issuer"
                 })
-                # एक्स्ट्रा Supabase ID हटा दें अगर हो तो
+                #  Supabase 
                 if "id" in df.columns: df = df.drop(columns=["id"])
                 return df
         return pd.DataFrame(columns=["Book Name", "Book ID", "Author", "Status of the Book", "Card ID of the Issuer"])
@@ -50,11 +50,11 @@ st.markdown("""
 
 st.markdown('<div class="main-title">SHREE JANTA SECONDARY SCHOOL LIBRARY MANAGEMENT SYSTEM</div>', unsafe_allow_html=True)
 
-# डेटाबेस से लाइव डाटा लोड करें
+
 if "books_df" not in st.session_state:
     st.session_state.books_df = load_data_from_supabase()
 
-# --- LEFT SIDEBAR (डेटा एंट्री) ---
+
 st.sidebar.markdown('<p class="pink-label">Book Name</p>', unsafe_allow_html=True)
 book_name = st.sidebar.text_input("Book Name Input", label_visibility="collapsed")
 
@@ -72,7 +72,7 @@ card_id = st.sidebar.text_input("Card ID Input", label_visibility="collapsed")
 
 if st.sidebar.button("Add new record", use_container_width=True):
     if book_name and book_id:
-        # Supabase में नया डेटा भेजने का फॉर्मेट
+        # Supabase 
         payload = {
             "book_name": book_name,
             "book_id": book_id,
@@ -90,7 +90,7 @@ if st.sidebar.button("Add new record", use_container_width=True):
     else:
         st.sidebar.error("Book Name & ID are required!")
 
-# --- RIGHT SIDE PANEL (कंट्रोल्स) ---
+# --- RIGHT SIDE PANEL 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.button("Delete Selected", use_container_width=True)
