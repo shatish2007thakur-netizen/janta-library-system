@@ -81,7 +81,7 @@ if st.sidebar.button("Add new record", use_container_width=True):
             "card_id": card_id
         }
         res = requests.post(TABLE_URL, headers=HEADERS, json=payload)
-        if res.status_code in:
+        if res.status_code in:[200, 201]
             st.sidebar.success("Saved to Cloud Database!")
             st.session_state.books_df = load_data_from_supabase()
             st.rerun()
