@@ -81,12 +81,13 @@ if st.sidebar.button("Add new record", use_container_width=True):
             "card_id": card_id
         }
         res = requests.post(TABLE_URL, headers=HEADERS, json=payload)
-        if res.status_code in:  # <--- यहाँ [200, 201] होना ज़रूरी है
+        if res.status_code in:
             st.sidebar.success("Saved to Cloud Database!")
             st.session_state.books_df = load_data_from_supabase()
             st.rerun()
         else:
             st.sidebar.error("Database Error! Check settings.")
+
 
 # --- RIGHT SIDE PANEL 
 col1, col2, col3, col4 = st.columns(4)
