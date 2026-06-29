@@ -87,8 +87,6 @@ if st.sidebar.button("Add new record", use_container_width=True):
             st.rerun()
         else:
             st.sidebar.error("Database Error! Check settings.")
-        else:
-            st.sidebar.error("Book Name & ID are required!")
 
 # --- RIGHT SIDE PANEL 
 col1, col2, col3, col4 = st.columns(4)
