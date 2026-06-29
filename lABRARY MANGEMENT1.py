@@ -6,8 +6,8 @@ import requests
 st.set_page_config(page_title="Janta Library Management System", layout="wide")
 
 # Please Give the details about your supabase
-SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL"
-SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
+SUPABASE_URL = "https://guoyvigqjbznsgjjizjs.supabase.co"
+SUPABASE_KEY = "sb_publishable_dmlrauPkLztOaJcqlnajfQ_g38HOONN"
 TABLE_URL = f"{SUPABASE_URL}/rest/v1/books"
 
 HEADERS = {
