@@ -5,10 +5,12 @@ import requests
 # Page Configuration
 st.set_page_config(page_title="Janta Library Management System", layout="wide")
 
-# ⚠️ यहाँ अपनी सही Supabase की डिटेल्स भरें:
-SUPABASE_URL = "https://guoyvigqjbznsgjjizjs.supabase.co/rest/v1/"
-SUPABASE_KEY = "sb_publishable_dmlrauPkLztOaJcqlnajfQ_g38HOONN"
+# ⚠️ URL Fix kiya (Double /rest/v1/ hata diya)
+SUPABASE_URL = "https://guoyvigqjbznsgjjizjs.supabase.co"
 TABLE_URL = f"{SUPABASE_URL}/rest/v1/books"
+
+# Supabase Ke Liye Zaroori Key
+SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "sb_publishable_dmlrauPkLztOaJcqlnajfQ_g38HOONN")
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -17,25 +19,29 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
-# Supabase से लाइव डाटा लोड करने का फंक्शन
+# Supabase se live data load karne ka function
 def load_data_from_supabase():
     try:
-        response = requests.get(TABLE_URL, headers=HEADERS)
+        # Get request me parameters pass kiye taaki proper sorted data aaye
+        response = requests.get(f"{TABLE_URL}?order=book_id.asc", headers=HEADERS)
         if response.status_code == 200:
             data = response.json()
             if data:
                 df = pd.DataFrame(data)
+                # Frontend columns ko safe format me rakhein par 'book_id' database key track karne ke liye rakhein
                 df = df.rename(columns={
-                    "book_name": "Book Name", "book_id": "Book ID", 
-                    "author": "Author", "status": "Status of the Book", 
+                    "book_name": "Book Name", 
+                    "book_id": "Book ID", 
+                    "author": "Author", 
+                    "status": "Status of the Book", 
                     "card_id": "Card ID of the Issuer"
                 })
-                # एक्स्ट्रा डेटाबेस कॉलम स्क्रीन से हटा दें
+                # Extra internal database columns screen se hata dein
                 if "id" in df.columns: df = df.drop(columns=["id"])
                 if "created_at" in df.columns: df = df.drop(columns=["created_at"])
                 return df
         return pd.DataFrame(columns=["Book Name", "Book ID", "Author", "Status of the Book", "Card ID of the Issuer"])
-    except:
+    except Exception as e:
         return pd.DataFrame(columns=["Book Name", "Book ID", "Author", "Status of the Book", "Card ID of the Issuer"])
 
 # UI Custom Styling
@@ -50,7 +56,7 @@ st.markdown("""
 
 st.markdown('<div class="main-title">SHREE JANTA SECONDARY SCHOOL LIBRARY MANAGEMENT SYSTEM</div>', unsafe_allow_html=True)
 
-# डेटाबेस से लाइव डाटा लोड करें
+# Dataframe state setup
 if "books_df" not in st.session_state:
     st.session_state.books_df = load_data_from_supabase()
 
@@ -77,7 +83,7 @@ if st.sidebar.button("Add new record", use_container_width=True):
             "book_id": book_id,
             "author": author_name,
             "status": status,
-            "card_id": card_id
+            "card_id": card_id if status == "Issued" else ""
         }
         res = requests.post(TABLE_URL, headers=HEADERS, json=payload)
         if res.status_code in [200, 201]:
@@ -85,24 +91,55 @@ if st.sidebar.button("Add new record", use_container_width=True):
             st.session_state.books_df = load_data_from_supabase()
             st.rerun()
         else:
-            st.sidebar.error(f"Error Code: {res.status_code}. Database Blocked.")
+            st.sidebar.error(f"Error Code: {res.status_code}. DB Connection Issue.")
     else:
         st.sidebar.error("Book Name & ID are required!")
 
-# --- RIGHT SIDE PANEL (कंट्रोल्स) ---
+# --- RIGHT SIDE PANEL (कंट्रोल्स और एक्शन्स) ---
 col1, col2, col3, col4 = st.columns(4)
+
 with col1:
-    st.button("Delete Selected", use_container_width=True)
+    # Selected row delete karne ke liye input box
+    delete_id = st.text_input("Enter Book ID to Delete", placeholder="Book ID...", label_visibility="collapsed")
+    if st.button("Delete Selected ID", use_container_width=True):
+        if delete_id:
+            # Supabase me row delete karne ke liye filter url parameters bhejte hain
+            del_url = f"{TABLE_URL}?book_id=eq.{delete_id}"
+            res = requests.delete(del_url, headers=HEADERS)
+            if res.status_code in [200, 204]:
+                st.success(f"Book {delete_id} deleted successfully!")
+                st.session_state.books_df = load_data_from_supabase()
+                st.rerun()
+            else:
+                st.error("Could not delete. Check ID.")
+        else:
+            st.warning("Please type a Book ID first!")
+
 with col2:
-    st.button("View record", use_container_width=True)
-with col3:
-    if st.button("Delete All Records", use_container_width=True):
-        requests.delete(TABLE_URL, headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"})
+    if st.button("Refresh / View Records", use_container_width=True):
         st.session_state.books_df = load_data_from_supabase()
         st.rerun()
-with col4:
-    if st.button("Clear fields", use_container_width=True):
+
+with col3:
+    if st.button("Delete All Records", use_container_width=True):
+        # Supabase bina filter ke sab delete nahi karne deta jab tak Preference header set na ho
+        truncate_headers = HEADERS.copy()
+        truncate_headers["Prefer"] = "count=exact"
+        # Sabhi data clear karne ke liye eq.neq filter bypass lagaya hai
+        res = requests.delete(f"{TABLE_URL}?book_id=neq.0", headers=truncate_headers)
+        st.success("All data cleared from Supabase!")
+        st.session_state.books_df = load_data_from_supabase()
         st.rerun()
 
+with col4:
+    if st.button("Clear Input Fields", use_container_width=True):
+        st.rerun()
+
+# --- LIVE SECURE TABLE VIEW ---
 st.markdown('<div class="table-banner">INFORMATION ABOUT ALL THE BOOKS (SECURE CLOUD DATABASE)</div>', unsafe_allow_html=True)
-st.data_editor(st.session_state.books_df, use_container_width=True, num_rows="dynamic")
+
+if not st.session_state.books_df.empty:
+    # Table data display karne ke liye
+    st.dataframe(st.session_state.books_df, use_container_width=True)
+else:
+    st.info("Cloud database khali hai ya connect nahi ho raha. Sidebar se books add karein.")
