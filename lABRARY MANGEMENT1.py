@@ -19,6 +19,51 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
+
+# ==============================================================================
+# --- 🔐 STEP 2 & 3: ADMIN ACCESS CONTROL LOGIC ---
+# ==============================================================================
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+if "user_role" not in st.session_state:
+    st.session_state["user_role"] = "Guest"  # By default sabhi user 'Guest' honge
+
+st.sidebar.title("🔐 Access Control")
+
+if not st.session_state["logged_in"]:
+    login_type = st.sidebar.radio("Select View Mode", ["Public / Read-Only", "Admin Login"])
+    
+    if login_type == "Admin Login":
+        username = st.sidebar.text_input("Username")
+        password = st.sidebar.text_input("Password", type="password")
+        
+        if st.sidebar.button("Login as Admin"):
+            # Secrets se username aur password match karega
+            if "credentials" in st.secrets and username == st.secrets["credentials"]["admin_username"] and password == st.secrets["credentials"]["admin_password"]:
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = "Admin"
+                st.sidebar.success("Welcome Back, Admin!")
+                st.rerun()
+            else:
+                st.sidebar.error("Invalid Username or Password! (Ya Secrets configure nahi hain)")
+    else:
+        st.sidebar.info("🌐 Status: Read-Only Mode (View Data Only)")
+else:
+    st.sidebar.write(f"Logged in as: **{st.session_state['user_role']}**")
+    if st.sidebar.button("Logout"):
+        st.session_state["logged_in"] = False
+        st.session_state["user_role"] = "Guest"
+        st.rerun()
+
+st.sidebar.markdown("---")
+
+# Helper function to check admin rights
+def is_admin():
+    if st.session_state["user_role"] == "Admin":
+        return True
+    else:
+        st.error("🛑 Access Denied: Sirf Admin hi data add, edit ya change kar sakta hai. Aap sirf view kar sakte hai.")
+        return False
 # Supabase se live data load karne ka function
 def load_data_from_supabase():
     try:
